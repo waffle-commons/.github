@@ -1,4 +1,4 @@
-# Welcome to Waffle Commons
+# Welcome to Waffle Commons Ecosystem
 
 **Waffle Commons** is an open-source organization dedicated to building modern, secure, and minimalist tools for PHP developers.
 
