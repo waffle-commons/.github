@@ -1,7 +1,7 @@
 🧇 The Waffle-Commons Ecosystem
 =================================
 
-> **Strict. Secure. Fast.**The PHP 8.5 Framework for the Paranoid Architect.
+> Strict. Secure. Fast.
 
 🚀 Overview
 -----------
