@@ -50,11 +50,13 @@ We are currently stabilizing the observability layer (Logs & Events) and finaliz
 
 *   ✅ **Alpha 4:** Pipeline & Hardening (Released Jan 2026)
 
-*   🚧 **Alpha 5:** Observability & Integration (In Progress)
+*   ✅ **Alpha 5:** Observability & Integration (Released Apr 2026)
 
-*   📅 **Alpha 6:** Interaction & Integrity (Coming Q2 2026)
+*   🚧 **Alpha 6:** Interaction & Integrity (In Progress)
 
-*   🎯 **v1.0.0:** Production Ready (Coming late 2026)
+*   📅 **Beta 1:** Interaction & Integrity (Coming Fall 2026)
+
+*   🎯 **v1.0.0:** Production Ready (Coming Winter 2026)
 
 
 🤝 Contributing
