@@ -6,7 +6,7 @@
 🚀 Overview
 -----------
 
-**Waffle** is a next-generation PHP framework designed for building secure, high-performance APIs and microservices. It is built on a **Zero Trust** architecture and enforces **Strict Typing** and **Immutability** by design.
+**Waffle** is a next-generation PHP framework for building secure, high-performance APIs and microservices. It is built on a **Zero Trust** architecture and enforces **Strict Typing** and **Immutability** by design.
 
 Unlike traditional frameworks, Waffle refuses "magic." We prioritize explicit dependency injection, rigorous interface contracts, and the bleeding-edge features of **PHP 8.5+** (Property Hooks, Asymmetric Visibility, Readonly Classes).
 
@@ -17,54 +17,55 @@ _Everything you need to build, secure, and deploy Waffle applications._
 💎 Core Philosophy
 ------------------
 
-1.  **🛡️ Security First:** Security is not an addon; it's the foundation. From Attribute-Based Access Control (ABAC) and a stateless CSRF layer, to native YAML parsing and strict input validation, Waffle assumes the environment is hostile.
+1.  **🛡️ Security First:** Security is the foundation, not an addon. **Fail-closed ABAC** (a controller action with no `#[Voter]` is denied unless explicitly marked `#[PublicAccess]`), a **stateless HMAC CSRF** layer, trusted-host enforcement, baseline secure headers, native YAML parsing, and strict input validation — Waffle assumes the environment is hostile.
 
-2.  **⚡ Bleeding Edge Performance:** Designed to run on **FrankenPHP** (Caddy) in Worker Mode. We leverage the latest PHP optimizations to deliver sub-millisecond response times.
+2.  **⚡ Bleeding Edge Performance:** Designed to run on **FrankenPHP** (Caddy) in Worker Mode. Long-lived workers, bounded memory, and a non-blocking outbound HTTP client deliver sub-millisecond response times.
 
 3.  **🧘 No Magic:** No facades. No global state. No implicit logic. Waffle code is predictable, testable, and statically analyzable.
 
-4.  **🧹 Zero-Debt:** Every component passes `vendor/bin/mago fmt`, `vendor/bin/mago lint`, `vendor/bin/mago analyze`, `vendor/bin/mago guard`, and `composer tests` with **0 errors, 0 warnings, 0 deprecations, 0 helps, 0 notes**. No baseline files exist anywhere in the tree.
+4.  **🧹 Zero-Debt:** Every component passes `vendor/bin/mago fmt`, `lint`, `analyze`, `guard`, and `composer tests` with **0 errors, 0 warnings**. No baseline files exist anywhere in the tree.
 
-5.  **🐘 PHP 8.5 Strict:** Property Hooks for DTO validation, Asymmetric Visibility (`public private(set)`) on framework state, typed constants for ecosystem-wide identifiers, `final readonly` for value objects, `#[\Override]` on every interface implementation.
+5.  **🐘 PHP 8.5 Strict:** Property Hooks for DTO validation, Asymmetric Visibility (`public private(set)`) on framework state, typed constants for ecosystem-wide identifiers, `final readonly` value objects, `#[\Override]` on every interface implementation.
 
 
 🧩 The Ecosystem Structure
 --------------------------
 
-The `waffle-commons` organization is a modular monorepo split into **16 fiercely independent components**. Every component depends only on `waffle-commons/contracts` plus its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
+The `waffle-commons` organization is a modular monorepo of **16 fiercely independent framework components**. Every component depends only on `waffle-commons/contracts` plus its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
 
 ### 🏛 Foundation
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
-| [**`contracts`**](https://github.com/waffle-commons/contracts) | **The Law.** Interfaces, marker attributes, enums, exception interfaces, ecosystem-wide typed constants. The only shared dependency. | PSR-3, 6, 7, 11, 14, 15, 16, 17 (extension surfaces) |
-| [**`utils`**](https://github.com/waffle-commons/utils) | Stateless helpers (`ReflectionTrait`) for tokenizer-based class introspection. | — |
+| [**`contracts`**](https://github.com/waffle-commons/contracts) | **The Law.** Interfaces, marker attributes, enums, exception interfaces, ecosystem-wide typed constants — the only shared dependency. Hosts the canonical `#[Route]` attribute (relocated here in Beta 2) and the HTTP-method `Constant`s. | PSR-3, 6, 7, 11, 14, 15, 16, 17, 18 (extension surfaces) |
+| [**`utils`**](https://github.com/waffle-commons/utils) | Stateless tokenizer-based class introspection (`ClassParser`, `AttributeReader`, `ReflectionInspector`). | — |
 
 ### 🧱 Infrastructure
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
 | [**`http`**](https://github.com/waffle-commons/http) | Immutable HTTP messages + factories. `GlobalsFactory`, `ResponseEmitter` with 8 KiB chunked streaming. | PSR-7, PSR-17 |
-| [**`container`**](https://github.com/waffle-commons/container) | PSR-11 container with reflection autowiring, circular-dependency detection, and worker-mode `reset()`. | PSR-11 |
-| [**`config`**](https://github.com/waffle-commons/config) | Native YAML loader (`ext-yaml`, `yaml.decode_php = 0`) with environment overlays and `%env(VAR)%` placeholders. | — |
+| [**`http-client`**](https://github.com/waffle-commons/http-client) | Non-blocking PSR-18 client (`curl_multi`) for outbound proxying. Bidirectional 8 KiB streaming, SSRF protocol allowlist (HTTP/HTTPS only), hardcoded 1 s / 10 s timeouts. | PSR-18 |
+| [**`container`**](https://github.com/waffle-commons/container) | PSR-11 container with reflection autowiring, circular-dependency detection, locked core services, and worker-mode `reset()`. | PSR-11 |
+| [**`config`**](https://github.com/waffle-commons/config) | Native YAML loader (`ext-yaml`, `yaml.decode_php = 0`) with environment overlays. Read-only env map — no process-environment mutation. | — |
 | [**`log`**](https://github.com/waffle-commons/log) | PSR-3 `StreamLogger` emitting one JSON line per record onto `stdout`/`stderr`. Docker/Kubernetes-native. | PSR-3 |
-| [**`cache`**](https://github.com/waffle-commons/cache) | PSR-6 + PSR-16 adapters: `ArrayCache`, `FileCache`, `RedisCache`. Stampede protection, strict key validation. | PSR-6, PSR-16 |
-| [**`event-dispatcher`**](https://github.com/waffle-commons/event-dispatcher) | PSR-14 dispatcher + `#[AsEventListener]` attribute discovery, priority ordering, stoppable events. | PSR-14 |
+| [**`cache`**](https://github.com/waffle-commons/cache) | PSR-6 + PSR-16 adapters: `ArrayCache`, `FileCache`, `RedisCache`. JSON serialization (no `unserialize` gadget surface), stampede protection, strict key validation. | PSR-6, PSR-16 |
+| [**`event-dispatcher`**](https://github.com/waffle-commons/event-dispatcher) | PSR-14 dispatcher + `#[AsEventListener]` discovery, priority ordering, stoppable events. | PSR-14 |
 
 ### ⚡ Request pipeline
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
-| [**`pipeline`**](https://github.com/waffle-commons/pipeline) | PSR-15 `MiddlewareStack` with locking semantics; `TrustedHostMiddleware`, `SecureHeadersMiddleware`, `CoreRoutingMiddleware`. | PSR-15 |
-| [**`routing`**](https://github.com/waffle-commons/routing) | Attribute-based routing via `#[Route]` / `#[Argument]`. Tokenizer-based discovery, container-injected arguments. | — |
-| [**`security`**](https://github.com/waffle-commons/security) | Hierarchical ABAC (10 levels), `#[Rule]` / `#[Voter]` / `#[RequiresCsrfToken]` attributes, stateless double-submit CSRF, `SecureContainer` decorator. | — |
-| [**`error-handler`**](https://github.com/waffle-commons/error-handler) | PSR-15 outermost middleware. RFC 7807 ("Problem Details") JSON renderer, interface-based status-code resolution. | PSR-15, RFC 7807 |
+| [**`pipeline`**](https://github.com/waffle-commons/pipeline) | PSR-15 `MiddlewareStack` with locking semantics; `TrustedHostMiddleware`, `SecureHeadersMiddleware`, `CoreRoutingMiddleware` (with `OPTIONS` preflight auto-answer). | PSR-15 |
+| [**`routing`**](https://github.com/waffle-commons/routing) | Attribute-based routing via `#[Route]` / `#[Argument]`. HTTP-method filtering & route overloading, `HEAD ⇒ GET` fallback, priority/catch-all, deterministic `Allow` header, worker-safe PCRE cache. | — |
+| [**`security`**](https://github.com/waffle-commons/security) | Hierarchical ABAC (10 levels), `#[Rule]` / `#[Voter]` / `#[PublicAccess]` / `#[RequiresCsrfToken]` attributes, fail-closed authorization, stateless HMAC double-submit CSRF, `SecureContainer` decorator. | — |
+| [**`error-handler`**](https://github.com/waffle-commons/error-handler) | PSR-15 outermost middleware. RFC 7807 ("Problem Details") JSON renderer; interface-based status resolution incl. `405 Method Not Allowed` + `Allow` header. | PSR-15, RFC 7807 |
 
 ### 🧠 Kernel & runtime
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
-| [**`waffle`**](https://github.com/waffle-commons/waffle) | The Kernel. `KernelInterface::handle()`, controller dispatch + argument resolution + response conversion, PSR-14 lifecycle events (`RequestReceivedEvent`, `ResponseGeneratedEvent`, `TerminateEvent`). | PSR-7, 11, 14, 15 |
+| [**`waffle`**](https://github.com/waffle-commons/waffle) | The Kernel. `KernelInterface::handle()`, controller dispatch + argument resolution, native `#[Dto]` validation → RFC 7807 `422`, PSR-14 lifecycle events. | PSR-7, 11, 14, 15 |
 | [**`runtime`**](https://github.com/waffle-commons/runtime) | `WaffleRuntime::loop()` for FrankenPHP worker mode; classic-SAPI single-shot fallback; periodic `gc_collect_cycles()`. | — |
 
 ### 🧰 Tooling & developer experience
@@ -72,46 +73,65 @@ The `waffle-commons` organization is a modular monorepo split into **16 fiercely
 | Component | Description | PSR |
 |:----------|:------------|:----|
 | [**`console`**](https://github.com/waffle-commons/console) | Zero-magic CLI runtime. Built-in commands: `cache:clear`, `route:list`, `security:audit`. Typed `ExitCode` + `Verbosity` enums. | — |
-| [**`workspace`**](https://github.com/waffle-commons/workspace) | Integration playground. Wires every component via path repositories for end-to-end testing under FrankenPHP. | — |
-| [**`skeleton`**](https://github.com/waffle-commons/skeleton) | Starter project. `composer create-project waffle-commons/skeleton my-app` and you have a Beta 0-grade app shell. | — |
-| [**`component-template`**](https://github.com/waffle-commons/component-template) | Reusable Beta 0 component scaffold. Cloning + `./configure-component.sh MyName` produces a fully wired new component. | — |
+| [**`workspace`**](https://github.com/waffle-commons/workspace) | Integration playground. Wires every component via path repositories for end-to-end testing under FrankenPHP. *(Template app — French-localized.)* | — |
+| [**`skeleton`**](https://github.com/waffle-commons/skeleton) | Starter project: `composer create-project waffle-commons/skeleton my-app`. *(Template app — French-localized.)* | — |
+| [**`component-template`**](https://github.com/waffle-commons/component-template) | Reusable component scaffold. Clone + `./configure-component.sh MyName` produces a fully wired new component. | — |
+
+
+🧑‍💻 Local Developer Tooling — `bin/wfl`
+----------------------------------------
+
+The umbrella ships a Docker-native host helper, **`wfl`**, so contributors never run PHP on the host:
+
+| Command | What it does |
+|:--------|:-------------|
+| `wfl init` | Inits submodules, boots the `docker compose` stack, installs the Git hooks, and symlinks `wfl` into `~/.local/bin`. |
+| `wfl up` / `wfl down` | Bring the container stack up / down (extra args passed through to `docker compose`). |
+| `wfl debug` | Activate the 🐛 **debug** PHP profile (Xdebug on, JIT off) and restart the container. |
+| `wfl bench` | Activate the 🚀 **bench** PHP profile (Xdebug off, JIT on) and restart the container. |
+| `wfl mago [comp]` / `wfl test [comp]` | Run `composer mago` / `composer tests` for a component inside the container. |
+| `wfl link` / `wfl unlink` | Wire a local provider component into a consumer's `composer.json` via a path repository. |
+| `wfl csrf-init` / `wfl secret-gen` | Generate matching `WAFFLE_SID` + CSRF token for API testing, or a fresh 32-byte application secret. |
+
+Run `wfl help` for the full command list.
 
 
 🚦 Project Status
 -----------------
 
-> **Current Phase:** 🟦 **Beta 0 (Stabilization & Synchronization)**
+> **Current Phase:** 🟦 **Beta 2 (HTTP correctness, developer experience & cognitive tooling)**
 
-The Alpha 6 roadmap has been deprecated. Beta 0 freezes the `waffle-commons/contracts` surface, unifies the ecosystem on the PHP 8.5.5 baseline, enforces architectural perimeters via `mago guard`, and synchronizes every component's tooling. No new features land in Beta 0 — it is the audit and hardening cut.
+Beta 2 lands a single cohesive framework feature in lockstep across four components — typed **`405 Method Not Allowed`** + **`OPTIONS`** preflight auto-answer + **`HEAD ⇒ GET`** fallback + a deterministic **`Allow`** header — while the bulk of the wave is **developer tooling** (`bin/wfl`, the AGENTS.md "central brain", new AI skills) and **template-app decoupling** (`skeleton`, `workspace`). The remaining twelve components are lockstep dependency bumps. **No breaking API changes** at the framework surface — the only migration is the `#[Route]` attribute's move into `contracts`.
 
-*   ✅ **Alpha 4:** Pipeline & Hardening (Released Jan 2026)
+*   ✅ **Alpha 4:** Pipeline & Hardening — native YAML config, PSR-15 pipeline, RFC 7807 error-handler.
 
-*   ✅ **Alpha 5:** Observability & Integration (Released Apr 2026)
+*   ✅ **Alpha 5:** Observability & Integration — PSR-3 log, PSR-14 event-dispatcher, attribute-based security.
 
-*   ❌ **Alpha 6:** _Deprecated — superseded by Beta 0._
+*   ✅ **Alpha 6:** Contracts freeze; DTO-validation groundwork.
 
-*   🟦 **Beta 0:** Stabilization, Documentation & Synchronization (In Progress, May 2026)
+*   ✅ **Beta 0:** "Zero-Debt" — Mago Purge Protocol complete, new `cache` + `console` components.
 
-*   📅 **Beta 1:** EcoShield Gateway prerequisites — `http-client` (PSR-18), catch-all routing, cache adapters at scale — Fall 2026
+*   ✅ **Beta 1:** "EcoShield" — worker-native security hardening, new PSR-18 `http-client`, fail-closed ABAC, stateless CSRF, secure headers.
 
-*   🎯 **v1.0.0:** Production Ready (Winter 2026)
+*   🟦 **Beta 2** (current): HTTP correctness wave + developer experience + cognitive tooling.
+
+*   🎯 **v1.0.0:** Production Ready (Winter 2026).
 
 
 🤝 Contributing
 ---------------
 
-We maintain a **zero-tolerance policy** for code quality. Before contributing, please ensure your environment meets the following requirements:
+We maintain a **zero-tolerance policy** for code quality. Before contributing, please ensure your environment meets the following:
 
-*   **PHP:** 8.5.5+ (strictly enforced; Property Hooks, Asymmetric Visibility, typed constants)
+*   **PHP:** 8.5+ (strictly enforced; Property Hooks, Asymmetric Visibility, typed constants).
 
-*   **Toolchain:** Mago (formatter, linter, analyzer, **guard**) — every check must pass with zero baselines
+*   **Toolchain:** Mago (formatter, linter, analyzer, **guard**) — every check must pass with zero baselines.
 
-*   **Testing:** PHPUnit 11+ (>= 95% coverage required for all components)
+*   **Testing:** PHPUnit 11+ (≥ 95 % coverage required for all components).
 
 *   **Architectural perimeter:** Your changes must respect the `[guard.perimeter.rules]` declared in the component's `mago.toml`. Cross-component coupling outside that perimeter is a build break.
 
-
-Every component carries a Beta 0 [PR template](https://github.com/waffle-commons/component-template/blob/main/.github/PULL_REQUEST_TEMPLATE.md) listing the exact gates a contribution must clear. Please read our [**Contribution Guidelines**](https://github.com/waffle-commons/waffle/blob/main/CONTRIBUTING.md) in the `waffle` repository.
+Every framework component ships a Keep-a-Changelog `CHANGELOG.md` and a PR template listing the exact gates a contribution must clear. CI runs an incremental, per-component matrix (only changed submodules are audited) behind a single required `umbrella-ci gate`. Please read our [**Contribution Guidelines**](https://github.com/waffle-commons/waffle/blob/main/CONTRIBUTING.md) in the `waffle` repository.
 
 <p align="center">
 <small>Maintained by the Waffle Framework Core Team. © 2026.</small>
