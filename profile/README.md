@@ -140,6 +140,4 @@ Every framework component ships a Keep-a-Changelog `CHANGELOG.md` and a PR templ
 
 ***
 
-<p align="center">
 <small>Maintained by the Waffle Framework Core Team. © 2026.</small>
-</p>
