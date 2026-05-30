@@ -136,6 +136,7 @@ Every framework component ships a Keep-a-Changelog `CHANGELOG.md` and a PR templ
 ***
 
 [![Discord](https://img.shields.io/discord/755288001592033391?color=7289da&label=discord&logo=discord&style=for-the-badge)](https://discord.gg/eKgywnfXr2)<br />
+>>>>>>> 9c46e3c (Add Discord community link to organization profile)
 *Join the core team and contributors on Discord to shape the future of cloud-native PHP.*
 
 ***
