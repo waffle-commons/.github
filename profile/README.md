@@ -133,6 +133,13 @@ We maintain a **zero-tolerance policy** for code quality. Before contributing, p
 
 Every framework component ships a Keep-a-Changelog `CHANGELOG.md` and a PR template listing the exact gates a contribution must clear. CI runs an incremental, per-component matrix (only changed submodules are audited) behind a single required `umbrella-ci gate`. Please read our [**Contribution Guidelines**](https://github.com/waffle-commons/waffle/blob/main/CONTRIBUTING.md) in the `waffle` repository.
 
+***
+
+[![Discord](https://img.shields.io/discord/755288001592033391?color=7289da&label=discord&logo=discord&style=for-the-badge)](https://discord.gg/eKgywnfXr2)<br />
+*Join the core team and contributors on Discord to shape the future of cloud-native PHP.*
+
+***
+
 <p align="center">
 <small>Maintained by the Waffle Framework Core Team. © 2026.</small>
 </p>
