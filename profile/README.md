@@ -17,7 +17,7 @@ _Everything you need to build, secure, and deploy Waffle applications._
 💎 Core Philosophy
 ------------------
 
-1.  **🛡️ Security First:** Security is the foundation, not an addon. **Fail-closed ABAC** (a controller action with no `#[Voter]` is denied unless explicitly marked `#[PublicAccess]`), a **stateless HMAC CSRF** layer, trusted-host enforcement, baseline secure headers, native YAML parsing, and strict input validation — Waffle assumes the environment is hostile.
+1.  **🛡️ Security First:** Security is the foundation, not an addon. **Fail-closed ABAC** (a controller action with no `#[Voter]` is denied unless explicitly marked `#[PublicAccess]`), **fail-closed universal authentication** (JWT, OAuth2/OIDC, HMAC assertions, API keys, Basic), a **stateless HMAC CSRF** layer bound to the authenticated identity, **internal SSRF protection** (DNS-pinned, private-CIDR-blocked outbound calls), timing-safe secret comparison, trusted-host enforcement, baseline secure headers, native YAML parsing, and strict input validation — Waffle assumes the environment is hostile.
 
 2.  **⚡ Bleeding Edge Performance:** Designed to run on **FrankenPHP** (Caddy) in Worker Mode. Long-lived workers, bounded memory, and a non-blocking outbound HTTP client deliver sub-millisecond response times.
 
@@ -31,7 +31,7 @@ _Everything you need to build, secure, and deploy Waffle applications._
 🧩 The Ecosystem Structure
 --------------------------
 
-The `waffle-commons` organization is a modular monorepo of **16 fiercely independent framework components**. Every component depends only on `waffle-commons/contracts` plus its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
+The `waffle-commons` organization is a modular monorepo of **18 fiercely independent framework components**. Every component depends only on `waffle-commons/contracts` (plus `waffle-commons/utils`, the shared foundation — which itself requires only `contracts`) and its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
 
 ### 🏛 Foundation
 
@@ -61,6 +61,13 @@ The `waffle-commons` organization is a modular monorepo of **16 fiercely indepen
 | [**`security`**](https://github.com/waffle-commons/security) | Hierarchical ABAC (10 levels), `#[Rule]` / `#[Voter]` / `#[PublicAccess]` / `#[RequiresCsrfToken]` attributes, fail-closed authorization, stateless HMAC double-submit CSRF, `SecureContainer` decorator. | — |
 | [**`error-handler`**](https://github.com/waffle-commons/error-handler) | PSR-15 outermost middleware. RFC 7807 ("Problem Details") JSON renderer; interface-based status resolution incl. `405 Method Not Allowed` + `Allow` header. | PSR-15, RFC 7807 |
 
+### 🔐 Auth & 🗄 Data
+
+| Component | Description | PSR |
+|:----------|:------------|:----|
+| [**`auth`**](https://github.com/waffle-commons/auth) | **Universal Authentication Bridge (RFC-021).** All inbound authN — JWT (HS256/RS256 + JWKS), OAuth2/OIDC (PKCE S256), HMAC gateway assertions (`X-Wfl-Assert-User`), API keys, HTTP Basic — plus an outbound `AuthenticatedClient` PSR-18 decorator. Fail-closed, stateless, `hash_equals()` throughout. *AuthN only — authZ stays in `security`.* | PSR-15, PSR-18 |
+| [**`data`**](https://github.com/waffle-commons/data) | **Universal Data & Persistence (RFC-022).** Warm `PDOConnectionPool`, a backend-agnostic query AST, parameterized SQL / Firestore / Mongo / key-value / Cassandra / GraphQL compilers, seven stateless CRUD repositories, a property-hook hydrator, and a stateless SQL migration runner. **No ORM, no identity map, no change tracking.** | — |
+
 ### 🧠 Kernel & runtime
 
 | Component | Description | PSR |
@@ -76,6 +83,7 @@ The `waffle-commons` organization is a modular monorepo of **16 fiercely indepen
 | [**`workspace`**](https://github.com/waffle-commons/workspace) | Integration playground. Wires every component via path repositories for end-to-end testing under FrankenPHP. *(Template app — French-localized.)* | — |
 | [**`skeleton`**](https://github.com/waffle-commons/skeleton) | Starter project: `composer create-project waffle-commons/skeleton my-app`. *(Template app — French-localized.)* | — |
 | [**`component-template`**](https://github.com/waffle-commons/component-template) | Reusable component scaffold. Clone + `./configure-component.sh MyName` produces a fully wired new component. | — |
+| [**`academy`**](https://github.com/waffle-commons/academy) | Hands-on learning app: 50 TDD labs across five levels (L1–L5) with an answer-key tree + solve/verify toggle, plus an enriched FrankenPHP sandbox. *(Template app — French-localized.)* | — |
 
 
 🧑‍💻 Local Developer Tooling — `bin/wfl`
@@ -90,6 +98,9 @@ The umbrella ships a Docker-native host helper, **`wfl`**, so contributors never
 | `wfl debug` | Activate the 🐛 **debug** PHP profile (Xdebug on, JIT off) and restart the container. |
 | `wfl bench` | Activate the 🚀 **bench** PHP profile (Xdebug off, JIT on) and restart the container. |
 | `wfl mago [comp]` / `wfl test [comp]` | Run `composer mago` / `composer tests` for a component inside the container. |
+| `wfl igor` / `wfl compare-audit [comp…]` | Run the igor-php worker-state audit (the **0 KO** gate), or the SEC-03 timing-safe-comparison gate over secret/token/HMAC sites. |
+| `wfl check:all [--with-tests]` / `wfl monorepo:sync [--fix]` | Parallel `composer mago` across every component; report (or with `--fix`, align) `waffle-commons/*` version constraints. |
+| `wfl academy:test` / `:solve` / `:reset` / `:verify` / `:serve` | Run the Academy labs TDD suite + progress card, load/clear reference solutions, prove them green, or serve the sandbox. |
 | `wfl link` / `wfl unlink` | Wire a local provider component into a consumer's `composer.json` via a path repository. |
 | `wfl csrf-init` / `wfl secret-gen` | Generate matching `WAFFLE_SID` + CSRF token for API testing, or a fresh 32-byte application secret. |
 
@@ -99,9 +110,9 @@ Run `wfl help` for the full command list.
 🚦 Project Status
 -----------------
 
-> **Current Phase:** 🟦 **Beta 2 (HTTP correctness, developer experience & cognitive tooling)**
+> **Current Phase:** 🟦 **Beta 4 (Security & Stability — Release-Candidate readiness groundwork)**
 
-Beta 2 lands a single cohesive framework feature in lockstep across four components — typed **`405 Method Not Allowed`** + **`OPTIONS`** preflight auto-answer + **`HEAD ⇒ GET`** fallback + a deterministic **`Allow`** header — while the bulk of the wave is **developer tooling** (`bin/wfl`, the AGENTS.md "central brain", new AI skills) and **template-app decoupling** (`skeleton`, `workspace`). The remaining twelve components are lockstep dependency bumps. **No breaking API changes** at the framework surface — the only migration is the `#[Route]` attribute's move into `contracts`.
+Beta 4 hardens the framework toward RC readiness: **session-ID rotation + identity-bound CSRF** (SEC-01), **internal SSRF protection** with DNS-pinning and private-CIDR blocking (SEC-02), a **timing-safe comparison gate** for secret/token/HMAC sites (SEC-03, `wfl compare-audit`), architectural-stability and worker-mode-diagnostics passes, developer-experience tooling (`wfl check:all`, `wfl monorepo:sync`, Git hooks), and the new monorepo **Academy** (50 TDD labs). It builds on Beta 3, which shipped the `data` (RFC-022) and `auth` (RFC-021) components plus the `wfl igor` worker-safety gate.
 
 *   ✅ **Alpha 4:** Pipeline & Hardening — native YAML config, PSR-15 pipeline, RFC 7807 error-handler.
 
@@ -113,9 +124,13 @@ Beta 2 lands a single cohesive framework feature in lockstep across four compone
 
 *   ✅ **Beta 1:** "EcoShield" — worker-native security hardening, new PSR-18 `http-client`, fail-closed ABAC, stateless CSRF, secure headers.
 
-*   🟦 **Beta 2** (current): HTTP correctness wave + developer experience + cognitive tooling.
+*   ✅ **Beta 2:** HTTP correctness wave (405 / `OPTIONS` / `HEAD` / `Allow`) + developer experience + cognitive tooling.
 
-*   🎯 **v1.0.0:** Production Ready (Winter 2026).
+*   ✅ **Beta 3:** Data & Persistence (`data`, RFC-022) + Universal Auth Bridge (`auth`, RFC-021) + `wfl igor` worker-safety tooling.
+
+*   🟦 **Beta 4** (current): Security & stability hardening (SSRF, identity-bound CSRF, timing-safe comparisons) + DX tooling + the monorepo Academy.
+
+*   🎯 **v1.0.0:** Production Ready (Gold — April 2027), via Beta 5 (AOT · pooling · telemetry), Beta 6 (production surface — `queue`, OpenAPI, serializer, testing), Beta 7 (API freeze), and `1.0.0-RC1`.
 
 
 🤝 Contributing
@@ -125,9 +140,9 @@ We maintain a **zero-tolerance policy** for code quality. Before contributing, p
 
 *   **PHP:** 8.5+ (strictly enforced; Property Hooks, Asymmetric Visibility, typed constants).
 
-*   **Toolchain:** Mago (formatter, linter, analyzer, **guard**) — every check must pass with zero baselines.
+*   **Toolchain:** Mago (formatter, linter, analyzer, **guard**) + the **`wfl igor`** worker-safety audit (igor-php 0.7, **0 KO**) — every check must pass with zero baselines.
 
-*   **Testing:** PHPUnit 11+ (≥ 95 % coverage required for all components).
+*   **Testing:** PHPUnit 12.5+ (≥ 95 % coverage required for all components).
 
 *   **Architectural perimeter:** Your changes must respect the `[guard.perimeter.rules]` declared in the component's `mago.toml`. Cross-component coupling outside that perimeter is a build break.
 
