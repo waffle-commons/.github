@@ -8,12 +8,12 @@ This repository hosts the **public organization profile** for [github.com/waffle
 
 | Path | Purpose |
 | :--- | :--- |
-| [`profile/README.md`](profile/README.md) | The public org profile (rendered on the [`waffle-commons`](https://github.com/waffle-commons) org page): every component with its description and PSR compliance, the **Strict · Secure · Fast** philosophy, project status, and roadmap. |
+| [`profile/README.md`](profile/README.md) | The public org profile (rendered on the [`waffle-commons`](https://github.com/waffle-commons) org page): 21 framework components with their descriptions and PSR compliance, the **Strict · Secure · Fast** philosophy, project status, and roadmap. |
 | [`assets/`](assets/) | Logo and marketing/branding imagery referenced by component READMEs and the documentation site. |
 
 ## Current release
 
-🟦 **`0.1.0-beta4`** — *Security & Stability — Release-Candidate readiness groundwork.* See the [profile README](profile/README.md#-project-status) for the full roadmap.
+🟦 **`0.1.0-beta6`** — *Stabilization, Audit & Performance — Multi-engine security audit remediation, complete Diátaxis documentation overhaul, EcoShield Gateway POC, and K6 benchmark harness (7.8× Symfony/FPM throughput).* See the [profile README](profile/README.md#-project-status) for the full roadmap.
 
 ## Continuous integration & quality bar
 

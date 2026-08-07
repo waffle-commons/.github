@@ -31,7 +31,7 @@ _Everything you need to build, secure, and deploy Waffle applications._
 🧩 The Ecosystem Structure
 --------------------------
 
-The `waffle-commons` organization is a modular monorepo of **18 fiercely independent framework components**. Every component depends only on `waffle-commons/contracts` (plus `waffle-commons/utils`, the shared foundation — which itself requires only `contracts`) and its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
+The `waffle-commons` organization is a modular monorepo of **21 fiercely independent framework components**. Every component depends only on `waffle-commons/contracts` (plus `waffle-commons/utils`, the shared foundation — which itself requires only `contracts`) and its declared PSR dependencies — `mago guard` enforces this perimeter on every build.
 
 ### 🏛 Foundation
 
@@ -46,26 +46,29 @@ The `waffle-commons` organization is a modular monorepo of **18 fiercely indepen
 |:----------|:------------|:----|
 | [**`http`**](https://github.com/waffle-commons/http) | Immutable HTTP messages + factories. `GlobalsFactory`, `ResponseEmitter` with 8 KiB chunked streaming. | PSR-7, PSR-17 |
 | [**`http-client`**](https://github.com/waffle-commons/http-client) | Non-blocking PSR-18 client (`curl_multi`) for outbound proxying. Bidirectional 8 KiB streaming, SSRF protocol allowlist (HTTP/HTTPS only), hardcoded 1 s / 10 s timeouts. | PSR-18 |
-| [**`container`**](https://github.com/waffle-commons/container) | PSR-11 container with reflection autowiring, circular-dependency detection, locked core services, and worker-mode `reset()`. | PSR-11 |
+| [**`container`**](https://github.com/waffle-commons/container) | PSR-11 container with reflection autowiring, AOT compilation (`ContainerCompiler`), circular-dependency detection, locked core services, and worker-mode `reset()`. | PSR-11 |
 | [**`config`**](https://github.com/waffle-commons/config) | Native YAML loader (`ext-yaml`, `yaml.decode_php = 0`) with environment overlays. Read-only env map — no process-environment mutation. | — |
 | [**`log`**](https://github.com/waffle-commons/log) | PSR-3 `StreamLogger` emitting one JSON line per record onto `stdout`/`stderr`. Docker/Kubernetes-native. | PSR-3 |
 | [**`cache`**](https://github.com/waffle-commons/cache) | PSR-6 + PSR-16 adapters: `ArrayCache`, `FileCache`, `RedisCache`. JSON serialization (no `unserialize` gadget surface), stampede protection, strict key validation. | PSR-6, PSR-16 |
 | [**`event-dispatcher`**](https://github.com/waffle-commons/event-dispatcher) | PSR-14 dispatcher + `#[AsEventListener]` discovery, priority ordering, stoppable events. | PSR-14 |
+| [**`telemetry`**](https://github.com/waffle-commons/telemetry) | **SDK-Free Metrics & Prometheus Exposition (RFC-005).** Worker-safe `MetricsRegistry` with `ApcuMetricStore` (zero-heap shared metrics), `/waffle-metrics` Prometheus endpoint via `MetricsMiddleware`, memory/GC/pool collectors. | — |
+| [**`telemetry-otel`**](https://github.com/waffle-commons/telemetry-otel) | **OpenTelemetry Bridge (RFC-005).** Implements `telemetry` interfaces with OpenTelemetry SDK bindings, exported spans & metrics to OTLP collectors. | — |
 
 ### ⚡ Request pipeline
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
 | [**`pipeline`**](https://github.com/waffle-commons/pipeline) | PSR-15 `MiddlewareStack` with locking semantics; `TrustedHostMiddleware`, `SecureHeadersMiddleware`, `CoreRoutingMiddleware` (with `OPTIONS` preflight auto-answer). | PSR-15 |
-| [**`routing`**](https://github.com/waffle-commons/routing) | Attribute-based routing via `#[Route]` / `#[Argument]`. HTTP-method filtering & route overloading, `HEAD ⇒ GET` fallback, priority/catch-all, deterministic `Allow` header, worker-safe PCRE cache. | — |
+| [**`routing`**](https://github.com/waffle-commons/routing) | Attribute-based routing via `#[Route]` / `#[Argument]`. AOT trie compilation (`WAFFLE_AOT=1`), HTTP-method filtering & route overloading, `HEAD ⇒ GET` fallback, priority/catch-all, deterministic `Allow` header, worker-safe PCRE cache. | — |
 | [**`security`**](https://github.com/waffle-commons/security) | Hierarchical ABAC (10 levels), `#[Rule]` / `#[Voter]` / `#[PublicAccess]` / `#[RequiresCsrfToken]` attributes, fail-closed authorization, stateless HMAC double-submit CSRF, `SecureContainer` decorator. | — |
 | [**`error-handler`**](https://github.com/waffle-commons/error-handler) | PSR-15 outermost middleware. RFC 7807 ("Problem Details") JSON renderer; interface-based status resolution incl. `405 Method Not Allowed` + `Allow` header. | PSR-15, RFC 7807 |
+| [**`async`**](https://github.com/waffle-commons/async) | **Fiber Finish-Request Task Deferral (RFC-015).** Runs deferred tasks post-response in isolated PHP `Fiber` boundaries with bounded task budgets (`DEFAULT_BUDGET = 64`). Worker-safe `ResettableInterface`. | — |
 
 ### 🔐 Auth & 🗄 Data
 
 | Component | Description | PSR |
 |:----------|:------------|:----|
-| [**`auth`**](https://github.com/waffle-commons/auth) | **Universal Authentication Bridge (RFC-021).** All inbound authN — JWT (HS256/RS256 + JWKS), OAuth2/OIDC (PKCE S256), HMAC gateway assertions (`X-Wfl-Assert-User`), API keys, HTTP Basic — plus an outbound `AuthenticatedClient` PSR-18 decorator. Fail-closed, stateless, `hash_equals()` throughout. *AuthN only — authZ stays in `security`.* | PSR-15, PSR-18 |
+| [**`auth`**](https://github.com/waffle-commons/auth) | **Universal Authentication Bridge (RFC-021).** All inbound authN — JWT (HS256/RS256 + JWKS), OAuth2/OIDC (PKCE S256), WebAuthn/passkeys (`WebAuthnLibAdapter`), HMAC gateway assertions (`X-Wfl-Assert-User`), API keys, HTTP Basic — plus an outbound `AuthenticatedClient` PSR-18 decorator. Fail-closed, stateless, `hash_equals()` throughout. *AuthN only — authZ stays in `security`.* | PSR-15, PSR-18 |
 | [**`data`**](https://github.com/waffle-commons/data) | **Universal Data & Persistence (RFC-022).** Warm `PDOConnectionPool`, a backend-agnostic query AST, parameterized SQL / Firestore / Mongo / key-value / Cassandra / GraphQL compilers, seven stateless CRUD repositories, a property-hook hydrator, and a stateless SQL migration runner. **No ORM, no identity map, no change tracking.** | — |
 
 ### 🧠 Kernel & runtime
@@ -84,6 +87,7 @@ The `waffle-commons` organization is a modular monorepo of **18 fiercely indepen
 | [**`skeleton`**](https://github.com/waffle-commons/skeleton) | Starter project: `composer create-project waffle-commons/skeleton my-app`. *(Template app — French-localized.)* | — |
 | [**`component-template`**](https://github.com/waffle-commons/component-template) | Reusable component scaffold. Clone + `./configure-component.sh MyName` produces a fully wired new component. | — |
 | [**`academy`**](https://github.com/waffle-commons/academy) | Hands-on learning app: 50 TDD labs across five levels (L1–L5) with an answer-key tree + solve/verify toggle, plus an enriched FrankenPHP sandbox. *(Template app — French-localized.)* | — |
+| [**`ecoshield-gateway`**](https://github.com/waffle-commons/ecoshield-gateway) | Reverse-proxy gateway POC dogfooding Waffle framework components in production-style topology. | — |
 
 
 🧑‍💻 Local Developer Tooling — `bin/wfl`
@@ -110,9 +114,9 @@ Run `wfl help` for the full command list.
 🚦 Project Status
 -----------------
 
-> **Current Phase:** 🟦 **Beta 4 (Security & Stability — Release-Candidate readiness groundwork)**
+> **Current Phase:** 🟦 **Beta 6 (Stabilization, Audit & Performance — Multi-engine security audit remediation, Diátaxis docs, EcoShield Gateway POC, K6 benchmarks)**
 
-Beta 4 hardens the framework toward RC readiness: **session-ID rotation + identity-bound CSRF** (SEC-01), **internal SSRF protection** with DNS-pinning and private-CIDR blocking (SEC-02), a **timing-safe comparison gate** for secret/token/HMAC sites (SEC-03, `wfl compare-audit`), architectural-stability and worker-mode-diagnostics passes, developer-experience tooling (`wfl check:all`, `wfl monorepo:sync`, Git hooks), and the new monorepo **Academy** (50 TDD labs). It builds on Beta 3, which shipped the `data` (RFC-022) and `auth` (RFC-021) components plus the `wfl igor` worker-safety gate.
+Beta 6 stabilizes and audits the entire ecosystem: **17/17 security audit findings remediated natively with zero suppressions (AXE 2)** across SQL injection, auth timing channels, voter subject resolution, HTML escaping, and AOT container state parity; a **complete Diátaxis documentation overhaul (AXE 3, 331 verified links)**; the **EcoShield Gateway reverse-proxy POC**; and the **scientific K6 benchmarking harness (AXE 5)** proving **7.8× throughput of Symfony/PHP-FPM at 8.7× lower p50**. It builds on Beta 5, which shipped the enterprise runtime additions (`telemetry`, `telemetry-otel`, `async`, AOT container/router compiler, DB connection pooling, WebAuthn/passkeys).
 
 *   ✅ **Alpha 4:** Pipeline & Hardening — native YAML config, PSR-15 pipeline, RFC 7807 error-handler.
 
@@ -128,9 +132,13 @@ Beta 4 hardens the framework toward RC readiness: **session-ID rotation + identi
 
 *   ✅ **Beta 3:** Data & Persistence (`data`, RFC-022) + Universal Auth Bridge (`auth`, RFC-021) + `wfl igor` worker-safety tooling.
 
-*   🟦 **Beta 4** (current): Security & stability hardening (SSRF, identity-bound CSRF, timing-safe comparisons) + DX tooling + the monorepo Academy.
+*   ✅ **Beta 4:** Security & stability hardening (SSRF, identity-bound CSRF, timing-safe comparisons) + DX tooling + the monorepo Academy.
 
-*   🎯 **v1.0.0:** Production Ready (Gold — April 2027), via Beta 5 (AOT · pooling · telemetry), Beta 6 (production surface — `queue`, OpenAPI, serializer, testing), Beta 7 (API freeze), and `1.0.0-RC1`.
+*   ✅ **Beta 5:** Enterprise Runtime — AOT container/router compiler, DB connection pooling, Fiber `async` finish-request deferral, contract-first `telemetry` & `telemetry-otel` bridge, WebAuthn/passkeys.
+
+*   🟦 **Beta 6** (current): Stabilization, Audit & Performance — multi-engine security audit remediation (17/17 fixed natively), Diátaxis docs overhaul, EcoShield Gateway POC, K6 benchmark suite (7.8× Symfony/FPM).
+
+*   🎯 **v1.0.0:** Production Ready (Gold — December 2026), via Beta 7 (production surface — `queue`, OpenAPI, serializer, testing, resilience-net, K8s ops), Beta 8 (API freeze & consolidation), and `1.0.0-RC1`.
 
 
 🤝 Contributing
