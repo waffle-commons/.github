@@ -31,6 +31,6 @@ No `mago-*-baseline.toml` file exists anywhere in the tree. Every component must
 ## Related
 
 - 📖 [**Documentation**](https://github.com/waffle-commons/documentation) — the Diátaxis-organized framework docs (tutorials, how-to, reference, explanation).
-- 🏗 [**Skeleton**](https://github.com/waffle-commons/skeleton) — starter project (`composer create-project waffle-commons/skeleton my-app`).
+- 🏗 [**Skeleton**](https://github.com/waffle-commons/skeleton) — starter project (`composer create-project waffle-commons/skeleton:0.1.0-beta7 my-app`).
 - 🧩 [**Component template**](https://github.com/waffle-commons/component-template) — scaffold for new components.
 - 🔒 [**Member-facing org profile**](https://github.com/waffle-commons/.github-private) — internal architecture deep-dive for core contributors.
